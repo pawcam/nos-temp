@@ -43,11 +43,10 @@ int main(int argc, char *argv[]) {
     string strMqPassword = getenv("MQ_PASSWORD");
     string strMqVHost = getenv("MQ_VHOST");
     string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
-    uint16_t nOrPort = lexical_cast<uint16_t>(getenv("OR_PORT"));
     string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
     string strMqQueueName = getenv("MQ_QUEUE_NAME");
 
-    OELAdapterType *pOelAdapter = new OELAdapterType(nOrPort, INPUT, strORDefaultRoute);
+    OELAdapterType *pOelAdapter = new OELAdapterType(INPUT, strORDefaultRoute);
     pService = new service_t(strInstanceId, strMqHost, nMqPort, strMqUsername, strMqPassword, strMqVHost, strMqQueueName, strMqExchangeName,
                             pOelAdapter);
     pService->start();

@@ -21,6 +21,8 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
 
   std::string strRejectionMessage;
 
+  SX_DEBUG("Attempting to handle message for order %s\n", jMessage.dump());
+
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage);
   const string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
@@ -28,13 +30,20 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
     sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);
     if (szMsg.h.uchType == sxORMsgWithType::MSG_NEW_ORDER_WITH_ACCOUNT) {
       nOrderNum = m_pOR2Adapter->sendOrder(szMsg.u.nowa, strDestination);
+      SX_DEBUG("Sent order (single): %d \n", szMsg.u.nowa.nIdentifier);
     } else if (szMsg.h.uchType == sxORMsgWithType::MSG_COMPLEX_WRAPPER) { // Order is a spread (multi-leg)
       msg_ComplexOrderWrapper &comp = szMsg.u.comp;
       msg_NewOrderWithAccount *pNowa = (msg_NewOrderWithAccount *) comp.beginMsgStruct();
       nOrderNum = m_pOR2Adapter->sendOrder(*pNowa, comp.getLeg(0), comp.nLegs, strDestination);
+      SX_DEBUG("Sent order (complex): %d \n", pNowa->nIdentifier);
     }
   } catch (const TW::invalid_order& e) {
+    SX_DEBUG("Failed to process btorder - Exception: %s \n", e.what());
     rejectMessageOrder(orderWrapper, e.what());
+    return false;
+  } catch (const std::exception& e) {
+    SX_DEBUG("Failed to process order - JSON Parser Error %s \n", e.what());
+    m_pMQAdapter->publishToErrorQueue(std::string("Failed to process order - JSON Parser Error ") + e.what());
     return false;
   }
 
@@ -64,7 +73,6 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   return !isOrderBogus;
 
 }
-
 
 void NewOrderMessageHandler::rejectMessageOrder(const TW::JsonOrderInterpreter &orderWrapper, const std::string &strRejectionMessage) const {
   nlohmann::json j = {

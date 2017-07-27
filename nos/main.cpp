@@ -27,23 +27,24 @@ int main(int argc, char *argv[]) {
     const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
     const string strMqQueueName = getenv("MQ_QUEUE_NAME");
 
-  TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
-                         strMqPassword, strMqVHost, strMqQueueName,
-                         strMqExchangeName);
+    sx_ThreadSafeLockUnlock lock;
+    TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
-  TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute);
+    TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
+                            strMqPassword, strMqVHost, strMqQueueName,
+                            strMqExchangeName, "MQAdapter");
+    NewOrderCallbackHandler callbackHandler(&mqAdapter);
+    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter);
 
-  NewOrderCallbackHandler callbackHandler(&mqAdapter);
+    or2Adapter.setService(&callbackHandler);
+    mqAdapter.setMessageHandler(&messageHandler);
 
-  NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter);
+    or2Adapter.start();
+    lock.Lock(__FILE__, __LINE__);
+    lock.Unlock();
+    mqAdapter.start();
 
-  mqAdapter.setMessageHandler(&messageHandler);
-  or2Adapter.setService(&callbackHandler);
-
-  mqAdapter.start();
-  or2Adapter.start();
-
-  mqAdapter.join();
-  or2Adapter.join();
-  return 0;
+    or2Adapter.join();
+    mqAdapter.join();
+    return 0;
 }

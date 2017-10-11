@@ -10,8 +10,8 @@
 #include <twLib/or/OR2Adapter.h>
 
 
-NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter)
-  : m_pOR2Adapter(pOR2Adapter), m_pMQAdapter(pMQAdapter)
+NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config)
+  : m_pOR2Adapter(pOR2Adapter), m_pMQAdapter(pMQAdapter), m_config(config)
 {
   m_rootMap.initFromDBOption("db_option_combined.out", true);
 }
@@ -26,8 +26,15 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage);
   const string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
+
   try {
     sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);
+      // The OEL doesn't know about this account, reject this order
+      if(m_config.hmAccountMap.find(orderWrapper.getAccountNumber()) == m_config.hmAccountMap.end()) {
+        rejectMessageOrder(orderWrapper, "This account is unknown, it may not be configured for this product");
+        return false;
+      }
+
     if (szMsg.h.uchType == sxORMsgWithType::MSG_NEW_ORDER_WITH_ACCOUNT) {
       nOrderNum = m_pOR2Adapter->sendOrder(szMsg.u.nowa, strDestination);
       SX_DEBUG("Sent order (single): %d \n", szMsg.u.nowa.nIdentifier);

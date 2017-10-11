@@ -2,6 +2,7 @@
 #include <iostream>
 #include <kr/sx_log.h>
 #include <kr/CmdLine.h>
+#include <OR2Lib/ORConfigReader.h>
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/or/OR2Adapter.h>
 
@@ -27,6 +28,9 @@ int main(int argc, char *argv[]) {
     const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
     const string strMqQueueName = getenv("MQ_QUEUE_NAME");
 
+    ORConfigReader::Config config;
+    ORConfigReader::read(std::string("Config.xml"), std::string(""), config);
+
     sx_ThreadSafeLockUnlock lock;
     TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
@@ -34,7 +38,7 @@ int main(int argc, char *argv[]) {
                             strMqPassword, strMqVHost, strMqQueueName,
                             strMqExchangeName, "MQAdapter");
     NewOrderCallbackHandler callbackHandler(&mqAdapter);
-    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter);
+    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config);
 
     or2Adapter.setService(&callbackHandler);
     mqAdapter.setMessageHandler(&messageHandler);

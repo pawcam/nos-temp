@@ -62,7 +62,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   std::string strRoutingKey;
   json j;
   if (isOrderBogus) {
-    rejectMessageOrder(orderWrapper,  "Order sequence number has reached its limit or client lost connection.");
+    rejectMessageOrder(orderWrapper,  "OR: Order sequence number has reached its limit or client lost connection.");
   } else {
     j = {
       {"account-number",          orderWrapper.getAccountNumber()},

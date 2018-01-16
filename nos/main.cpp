@@ -5,6 +5,7 @@
 #include <OR2Lib/ORConfigReader.h>
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/or/OR2Adapter.h>
+#include <twLib/FutureIDFactory.h>
 
 #include "NewOrderCallbackHandler.h"
 #include "NewOrderMessageHandler.h"
@@ -30,6 +31,8 @@ int main(int argc, char *argv[]) {
 
     ORConfigReader::Config config;
     ORConfigReader::read(std::string("Config.xml"), std::string(""), config);
+
+    TW::FutureIDFactory::loadCSV();
 
     sx_ThreadSafeLockUnlock lock;
     TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);

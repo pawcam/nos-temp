@@ -9,8 +9,9 @@
 
 using namespace std;
 using namespace boost;
-NewOrderCallbackHandler::NewOrderCallbackHandler(TW::MQAdapter *pMQAdapter)
-  : m_pMQAdapter(pMQAdapter) { }
+NewOrderCallbackHandler::NewOrderCallbackHandler(TW::MQAdapter *pMQAdapter, ORConfigReader::Config& config)
+  : m_pMQAdapter(pMQAdapter)
+  , m_config(config) {}
 
 void NewOrderCallbackHandler::statusUpdate(const TOptionID &UNUSED(optID), const string &strRoute,
                                            const msg_StatusUpdate &stat) {
@@ -38,7 +39,12 @@ void NewOrderCallbackHandler::statusUpdate(const TFutureOptionID &UNUSED(futOptI
 }
 
 void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &message, const string &strRoute) {
-  const TW::AcctNumber_t &nAcctNumber = TW::accountIdToAccountNumber(message.nAcct);
+  const TW::AcctNumber_t strAcct = m_config.accountIdToAccountNumber(message.nAcct);
+  if (strAcct == "") {
+    handleAccountNumberNotFound(message.nAcct);
+    return;
+  }
+
   const uint32_t &nIdentifier = message.nIdentifier;
   const uint32_t &nGlobalOrderNum = message.nGlobalOrderNum;
   const uint64_t &nExchangesOrderNum = message.nExchangesOrderNum;
@@ -46,7 +52,7 @@ void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &messag
   const sxORMsgWithType::ExchangeStatus eExchangeStatus = (sxORMsgWithType::ExchangeStatus)message.nExchangeStatus;
 
   const nlohmann::json j = {
-    {"account-number",              nAcctNumber},
+    {"account-number",              strAcct},
     {"exchange-status",             serialize::tostring(eExchangeStatus)},
     {"id",                          nIdentifier},
     {"ext-global-order-number",     nGlobalOrderNum},
@@ -54,7 +60,14 @@ void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &messag
     {"in-flight-at",                strMessageTime},
     {"ext-exchange-order-number",   nExchangesOrderNum}
   };
-  const string strRoutingKey = MQUtil::getOrderInFlightRoutingKey(nAcctNumber, nIdentifier);
+  const string strRoutingKey = MQUtil::getOrderInFlightRoutingKey(strAcct, nIdentifier);
   m_pMQAdapter->publish(strRoutingKey, j);
 }
 
+void NewOrderCallbackHandler::handleAccountNumberNotFound(int32_t nAccount) const
+{
+  const std::string errorMessage = boost::str(boost::format("Account number not found for ID = %d") % nAccount);
+
+  SX_WARN("%s\n", errorMessage);
+  m_pMQAdapter->publishToErrorQueue(errorMessage);
+}

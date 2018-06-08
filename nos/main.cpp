@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
                             strMqPassword, strMqVHost, strMqQueueName,
                             strMqExchangeName, "MQAdapter");
-    NewOrderCallbackHandler callbackHandler(&mqAdapter);
+    NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
     NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config);
 
     or2Adapter.setService(&callbackHandler);

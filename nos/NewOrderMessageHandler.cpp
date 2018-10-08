@@ -59,21 +59,8 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   // 2) the client is not actually connected to anything that it can send orders to
   // In either case, the failure is an infrastructure failure, and not a semantic failure.
   bool isOrderBogus = (nOrderNum == numeric_limits<uint32_t>::max());
-  std::string strRoutingKey;
-  json j;
   if (isOrderBogus) {
     rejectMessageOrder(orderWrapper,  "OR: Order sequence number has reached its limit or client lost connection.");
-  } else {
-    j = {
-      {"account-number",          orderWrapper.getAccountNumber()},
-      {"id",                      orderWrapper.getOrderId()},
-      {"status",                  "Placed"},
-      {"destination-venue",       strDestination}
-    };
-    strRoutingKey = MQUtil::getOrderPlacementRoutingKey(orderWrapper.getAccountNumber(),
-                                                        orderWrapper.getOrderId());
-
-    m_pMQAdapter->publish(strRoutingKey, j);
   }
 
 

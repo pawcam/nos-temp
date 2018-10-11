@@ -60,7 +60,8 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   // In either case, the failure is an infrastructure failure, and not a semantic failure.
   bool isOrderBogus = (nOrderNum == numeric_limits<uint32_t>::max());
   if (isOrderBogus) {
-    rejectMessageOrder(orderWrapper,  "OR: Order sequence number has reached its limit or client lost connection.");
+    const std::string strRejectionMessage =  "OR:" + strDestination + ": Order sequence number has reached its limit or client lost connection.";
+    rejectMessageOrder(orderWrapper,  strRejectionMessage);
   }
 
 

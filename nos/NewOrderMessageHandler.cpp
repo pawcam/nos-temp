@@ -1,6 +1,3 @@
-//
-// Created by nriffe on 10/14/15.
-//
 #include "NewOrderMessageHandler.h"
 
 #include <twLib/ExceptionTypes.h>
@@ -8,10 +5,11 @@
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/mq/MQUtil.h>
 #include <twLib/or/OR2Adapter.h>
+#include <twLib/SenderLocationReader.h>
 
 
-NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config)
-  : m_pOR2Adapter(pOR2Adapter), m_pMQAdapter(pMQAdapter), m_config(config)
+NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader *pSenderLocationReader)
+  : m_pOR2Adapter(pOR2Adapter), m_pMQAdapter(pMQAdapter), m_pSenderLocationReader(pSenderLocationReader), m_config(config)
 {
   m_rootMap.initFromDBOption("db_option_combined.out", true);
 }
@@ -23,7 +21,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
 
   SX_DEBUG("Attempting to handle message for order %s\n", jMessage.dump());
 
-  TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage);
+  TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage, m_pSenderLocationReader);
   const string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
 

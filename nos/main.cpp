@@ -6,6 +6,7 @@
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/or/OR2Adapter.h>
 #include <twLib/models/FutureOption.h>
+#include <twLib/SenderLocationReader.h>
 
 #include "NewOrderCallbackHandler.h"
 #include "NewOrderMessageHandler.h"
@@ -20,6 +21,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Enabling debug logging" << std::endl;
   sx_log::Instance().setBit(sx_log::SX_LOG_DEBUG, true);
 #endif
+
     const string strMqHost = getenv("MQ_HOST");
     const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
     const string strMqUsername = getenv("MQ_USERNAME");
@@ -35,6 +37,10 @@ int main(int argc, char *argv[]) {
     ORConfigReader::Config config;
     ORConfigReader::read(std::string("Config.xml"), std::string(""), config);
 
+    TW::SenderLocationReader locationReader;
+
+    locationReader.readFile();
+
     sx_ThreadSafeLockUnlock lock;
     TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
@@ -42,7 +48,7 @@ int main(int argc, char *argv[]) {
                             strMqPassword, strMqVHost, strMqQueueName,
                             strMqExchangeName, "MQAdapter");
     NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
-    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config);
+    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader);
 
     or2Adapter.setService(&callbackHandler);
     mqAdapter.setMessageHandler(&messageHandler);

@@ -5,6 +5,7 @@
 #include <OR2Lib/ORConfigReader.h>
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/or/OR2Adapter.h>
+#include <twLib/models/Future.h>
 #include <twLib/models/FutureOption.h>
 #include <twLib/SenderLocationReader.h>
 
@@ -31,8 +32,13 @@ int main(int argc, char *argv[]) {
     const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
     const string strMqQueueName = getenv("MQ_QUEUE_NAME");
 
+    std::vector <std::string> vFutureSymbolMappings = {
+      "cme_db_future.out",
+      "smalls_db_future.out"
+    };
 
-    TW::FutureOption::loadCmeSymbolMappingCSV();
+    TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);
+    TW::FutureOption::loadCmeSymbolMappingsCSV("cme_db_option.out");
 
     ORConfigReader::Config config;
     ORConfigReader::read(std::string("Config.xml"), std::string(""), config);

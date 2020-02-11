@@ -23,48 +23,49 @@ int main(int argc, char *argv[]) {
   sx_log::Instance().setBit(sx_log::SX_LOG_DEBUG, true);
 #endif
 
-    const string strMqHost = getenv("MQ_HOST");
-    const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
-    const string strMqUsername = getenv("MQ_USERNAME");
-    const string strMqPassword = getenv("MQ_PASSWORD");
-    const string strMqVHost = getenv("MQ_VHOST");
-    const string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
-    const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
-    const string strMqQueueName = getenv("MQ_QUEUE_NAME");
+  const string strMqHost = getenv("MQ_HOST");
+  const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
+  const string strMqUsername = getenv("MQ_USERNAME");
+  const string strMqPassword = getenv("MQ_PASSWORD");
+  const string strMqVHost = getenv("MQ_VHOST");
+  const string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
+  const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
+  const string strMqQueueName = getenv("MQ_QUEUE_NAME");
 
-    std::vector <std::string> vFutureSymbolMappings = {
-      "cme_db_future.out",
-      "smalls_db_future.out"
-    };
+  std::vector <std::string> vFutureSymbolMappings = {
+    "cme_db_future.out",
+    "smalls_db_future.out"
+  };
 
-    TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);
-    TW::FutureOption::loadCmeSymbolMappingsCSV("cme_db_option.out");
+  TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);
+  TW::FutureOption::loadCmeSymbolMappingsCSV("cme_db_option.out");
 
-    ORConfigReader::Config config;
-    ORConfigReader::read(std::string("Config.xml"), std::string(""), config);
+  ORConfigReader::Config config;
+  ORConfigReader::read(std::string("Config.xml"), std::string(""), config);
 
-    TW::SenderLocationReader locationReader;
+  TW::SenderLocationReader locationReader;
 
-    locationReader.readFile();
+  locationReader.readFile();
 
-    sx_ThreadSafeLockUnlock lock;
-    TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
+  sx_ThreadSafeLockUnlock lock;
+  //TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false);
+  TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
-    TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
-                            strMqPassword, strMqVHost, strMqQueueName,
-                            strMqExchangeName, "MQAdapter");
-    NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
-    NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader);
+  TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
+                          strMqPassword, strMqVHost, strMqQueueName,
+                          strMqExchangeName, "MQAdapter");
+  NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
+  NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader);
 
-    or2Adapter.setService(&callbackHandler);
-    mqAdapter.setMessageHandler(&messageHandler);
+  or2Adapter.setService(&callbackHandler);
+  mqAdapter.setMessageHandler(&messageHandler);
 
-    or2Adapter.start();
-    lock.Lock(__FILE__, __LINE__);
-    lock.Unlock();
-    mqAdapter.start();
+  or2Adapter.start();
+  lock.Lock(__FILE__, __LINE__);
+  lock.Unlock();
+  mqAdapter.start();
 
-    or2Adapter.join();
-    mqAdapter.join();
-    return 0;
+  or2Adapter.join();
+  mqAdapter.join();
+  return 0;
 }

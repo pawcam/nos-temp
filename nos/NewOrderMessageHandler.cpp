@@ -24,32 +24,28 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage, m_pSenderLocationReader);
   const string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
+  sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);
 
-  try {
-    sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);
-      // The OEL doesn't know about this account, reject this order
-      if(m_config.hmAccountMap.find(orderWrapper.getAccountNumber()) == m_config.hmAccountMap.end()) {
-        rejectMessageOrder(orderWrapper, "This account is unknown, it may not be configured for this product");
-        return false;
-      }
+  if (szMsg.h.uchType == sxORMsgWithType::MSG_INVALID) {
+    SX_DEBUG("Failed to create order message\n");
+    rejectMessageOrder(orderWrapper, "Failed to create order message");
+    return false;
+  }
 
-    if (szMsg.h.uchType == sxORMsgWithType::MSG_NEW_ORDER_WITH_ACCOUNT) {
-      nOrderNum = m_pOR2Adapter->sendOrder(szMsg.u.nowa, strDestination);
-      SX_DEBUG("Sent order (single): %d \n", szMsg.u.nowa.nIdentifier);
-    } else if (szMsg.h.uchType == sxORMsgWithType::MSG_COMPLEX_WRAPPER) { // Order is a spread (multi-leg)
-      msg_ComplexOrderWrapper &comp = szMsg.u.comp;
-      msg_NewOrderWithAccount *pNowa = (msg_NewOrderWithAccount *) comp.beginMsgStruct();
-      nOrderNum = m_pOR2Adapter->sendOrder(*pNowa, comp.getLeg(0), comp.nLegs, strDestination);
-      SX_DEBUG("Sent order (complex): %d \n", pNowa->nIdentifier);
-    }
-  } catch (const TW::invalid_order& e) {
-    SX_DEBUG("Failed to process btorder - Exception: %s \n", e.what());
-    rejectMessageOrder(orderWrapper, e.what());
+  // The OEL doesn't know about this account, reject this order
+  if (m_config.hmAccountMap.find(orderWrapper.getAccountNumber()) == m_config.hmAccountMap.end()) {
+    rejectMessageOrder(orderWrapper, "This account is unknown, it may not be configured for this product");
     return false;
-  } catch (const std::exception& e) {
-    SX_DEBUG("Failed to process order - JSON Parser Error %s \n", e.what());
-    m_pMQAdapter->publishToErrorQueue(std::string("Failed to process order - JSON Parser Error ") + e.what());
-    return false;
+  }
+
+  if (szMsg.h.uchType == sxORMsgWithType::MSG_NEW_ORDER_WITH_ACCOUNT) {
+    nOrderNum = m_pOR2Adapter->sendOrder(szMsg.u.nowa, strDestination);
+    SX_DEBUG("Sent order (single): %d \n", szMsg.u.nowa.nIdentifier);
+  } else if (szMsg.h.uchType == sxORMsgWithType::MSG_COMPLEX_WRAPPER) { // Order is a spread (multi-leg)
+    msg_ComplexOrderWrapper &comp = szMsg.u.comp;
+    msg_NewOrderWithAccount *pNowa = (msg_NewOrderWithAccount *) comp.beginMsgStruct();
+    nOrderNum = m_pOR2Adapter->sendOrder(*pNowa, comp.getLeg(0), comp.nLegs, strDestination);
+    SX_DEBUG("Sent order (complex): %d \n", pNowa->nIdentifier);
   }
 
   // We get the bogus client order number in one of two circumstances:

@@ -26,20 +26,21 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   SX_DEBUG("Attempting to handle message for order %s\n", jMessage.dump());
 
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage, m_pSenderLocationReader);
-  const string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
+  const std::string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
   try {
     sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);
 
     if (szMsg.h.uchType == sxORMsgWithType::MSG_INVALID) {
-      SX_ERROR("Failed to create order message\n");
-      rejectMessageOrder(orderWrapper, "Failed to create order message");
+      SX_ERROR("Failed to create order message: %d\n", orderWrapper.getOrderId());
+      rejectMessageOrder(orderWrapper, "Failed to create order message: " + std::to_string(orderWrapper.getOrderId()));
       return false;
     }
 
     // The OEL doesn't know about this account, reject this order
     if (m_config.hmAccountMap.find(orderWrapper.getAccountNumber()) == m_config.hmAccountMap.end()) {
-      rejectMessageOrder(orderWrapper, "This account is unknown, it may not be configured for this product");
+      SX_ERROR("This account is unknown (%s), it may not be configured for this product: %d\n", orderWrapper.getAccountNumber(), szMsg.u.nowa.nIdentifier);
+      rejectMessageOrder(orderWrapper, "This account is unknown (" + orderWrapper.getAccountNumber() + "), it may not be configured for this product: " + std::to_string(szMsg.u.nowa.nIdentifier));
       return false;
     }
 
@@ -54,8 +55,8 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
       SX_DEBUG("Sent order (complex): %d \n", pNowa->nIdentifier);
     }
   } catch (const std::exception &e) {
-    SX_ERROR("Failed to process order - JSON Parser Error %s \n", e.what());
-    m_pMQAdapter->publishToErrorQueue(std::string("Failed to process order - JSON Parser Error ") + e.what());
+    SX_ERROR("Failed to process order - JSON Parser Error %s\n", e.what());
+    m_pMQAdapter->publishToErrorQueue("Failed to process order - JSON Parser Error " + std::string(e.what()));
     return false;
   }
 
@@ -65,8 +66,8 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   // In either case, the failure is an infrastructure failure, and not a semantic failure.
   bool isOrderBogus = (nOrderNum == numeric_limits<uint32_t>::max());
   if (isOrderBogus) {
-    const std::string strRejectionMessage = "OR:" + strDestination + ": Order sequence number has reached its limit or client lost connection.";
-    rejectMessageOrder(orderWrapper, strRejectionMessage);
+    SX_ERROR("OR:%s: Order sequence number has reached its limit or client lost connection\n", strDestination);
+    rejectMessageOrder(orderWrapper, "OR:" + strDestination + ": Order sequence number has reached its limit or client lost connection");
   }
 
   return !isOrderBogus;
@@ -79,7 +80,7 @@ void NewOrderMessageHandler::rejectMessageOrder(const TW::JsonOrderInterpreter &
     {"status",                  "Rejected"},
     {"reject-detail",           strRejectionMessage }
   };
-  std::string strRoutingKey = MQUtil::getClientFailureRoutingKey(orderWrapper.getAccountNumber(),
+  const std::string strRoutingKey = MQUtil::getClientFailureRoutingKey(orderWrapper.getAccountNumber(),
                                                                  orderWrapper.getOrderId());
   m_pMQAdapter->publish(strRoutingKey, j);
 }

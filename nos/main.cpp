@@ -34,7 +34,8 @@ int main(int argc, char *argv[]) {
 
   std::vector <std::string> vFutureSymbolMappings = {
     "cme_db_future.out",
-    "smalls_db_future.out"
+    "smalls_db_future.out",
+    "cfe_db_future.out"
   };
 
   TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);

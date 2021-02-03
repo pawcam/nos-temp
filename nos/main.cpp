@@ -38,8 +38,10 @@ int main(int argc, char *argv[]) {
     "cfe_db_future.out"
   };
 
+  // load future options
   TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);
   TW::FutureOption::loadCmeSymbolMappingsCSV("cme_db_option.out");
+  TW::FutureOption::loadSmallsSymbolMappingsCSV("smalls_db_option.out");
 
   ORConfigReader::Config config;
   ORConfigReader::read(std::string("Config.xml"), std::string(""), config);

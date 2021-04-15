@@ -17,7 +17,8 @@ namespace TW {
 class NewOrderMessageHandler : public TW::MessageHandler {
 
 public:
-  NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader* pSenderLocationReader);
+  NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader* pSenderLocationReader,
+                         bool bDefaultRoute = false);
 
   virtual bool handleMessage(nlohmann::json &jMessage, std::string strTopic);
 
@@ -28,6 +29,7 @@ private:
   TW::SenderLocationReader *m_pSenderLocationReader;
   ORConfigReader::Config m_config;
   MismatchedRootsMap m_rootMap;
+  bool m_bDefaultRoute;
 
   void rejectMessageOrder(const TW::JsonOrderInterpreter &orderWrapper, const std::string &strRejectionMessage) const;
 };

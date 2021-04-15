@@ -15,9 +15,6 @@
 int main(int argc, char *argv[]) {
   sx_setArgCArgV(argc, argv);
 
-  CCmdLine cmdLine;
-  cmdLine.SplitLine(argc, argv);
-
 #ifdef _DEBUG
   std::cout << "Enabling debug logging" << std::endl;
   sx_log::Instance().setBit(sx_log::SX_LOG_DEBUG, true);
@@ -28,9 +25,14 @@ int main(int argc, char *argv[]) {
   const string strMqUsername = getenv("MQ_USERNAME");
   const string strMqPassword = getenv("MQ_PASSWORD");
   const string strMqVHost = getenv("MQ_VHOST");
+  const string strMqDirectExchangeName = getenv("MQ_DIRECT_EXCHANGE_NAME");
   const string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
   const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
   const string strMqQueueName = getenv("MQ_QUEUE_NAME");
+
+  CCmdLine cmdLine;
+  cmdLine.SplitLine(argc, argv);
+  bool bDirectExchange = cmdLine.HasSwitch("--direct_exchange");
 
   std::vector <std::string> vFutureSymbolMappings = {
     "cme_db_future.out",
@@ -51,14 +53,15 @@ int main(int argc, char *argv[]) {
   locationReader.readFile();
 
   sx_ThreadSafeLockUnlock lock;
-  //TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false);
   TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
+  string strBindingKey = bDirectExchange ? strMqQueueName : "";
   TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
-                          strMqPassword, strMqVHost, strMqQueueName,
-                          strMqExchangeName, "MQAdapter");
+                            strMqPassword, strMqVHost, strMqQueueName,
+                            strMqExchangeName, "MQAdapter", strBindingKey, bDirectExchange, strMqDirectExchangeName);
+
   NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
-  NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader);
+  NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader, bDirectExchange);
 
   or2Adapter.setService(&callbackHandler);
   mqAdapter.setMessageHandler(&messageHandler);

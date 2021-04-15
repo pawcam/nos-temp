@@ -10,11 +10,13 @@
 #include <twLib/SenderLocationReader.h>
 
 
-NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader *pSenderLocationReader)
+NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader *pSenderLocationReader,
+                                               bool bDefaultRoute)
   : m_pOR2Adapter(pOR2Adapter)
   , m_pMQAdapter(pMQAdapter)
   , m_pSenderLocationReader(pSenderLocationReader)
   , m_config(config)
+  , m_bDefaultRoute(bDefaultRoute)
 {
   m_rootMap.initFromDBOption("db_option_combined.out", true);
 }
@@ -26,7 +28,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   SX_DEBUG("Attempting to handle message for order %s\n", jMessage.dump());
 
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage, m_pSenderLocationReader);
-  const std::string strDestination = MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
+  const std::string strDestination = m_bDefaultRoute ? m_pOR2Adapter->getDefaultRoute() : MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
 
   try {
     sxORMsgWithType szMsg = orderWrapper.to_OR2MessageStruct(m_rootMap);

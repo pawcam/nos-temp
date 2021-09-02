@@ -39,12 +39,7 @@ void NewOrderCallbackHandler::statusUpdate(const TFutureOptionID &UNUSED(futOptI
 }
 
 void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &message, const string &strRoute) {
-  const TW::AcctNumber_t strAcct = m_config.accountIdToAccountNumber(message.nAcct);
-  if (strAcct == "") {
-    handleAccountNumberNotFound(message.nAcct);
-    return;
-  }
-
+  const TW::AcctNumber_t strAcct = message.szAccount;
   const uint32_t &nIdentifier = message.nIdentifier;
   const uint32_t &nGlobalOrderNum = message.nGlobalOrderNum;
   const uint64_t &nExchangesOrderNum = message.nExchangesOrderNum;
@@ -62,12 +57,4 @@ void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &messag
   };
   const string strRoutingKey = MQUtil::getOrderInFlightRoutingKey(strAcct, nIdentifier);
   m_pMQAdapter->publish(strRoutingKey, j);
-}
-
-void NewOrderCallbackHandler::handleAccountNumberNotFound(int32_t nAccount) const
-{
-  const std::string errorMessage = boost::str(boost::format("Account number not found for ID = %d") % nAccount);
-
-  SX_WARN("%s\n", errorMessage);
-  m_pMQAdapter->publishToErrorQueue(errorMessage);
 }

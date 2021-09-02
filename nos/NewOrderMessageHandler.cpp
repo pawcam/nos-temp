@@ -39,10 +39,9 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
       return false;
     }
 
-    // The OEL doesn't know about this account, reject this order
-    if (m_config.hmAccountMap.find(orderWrapper.getAccountNumber()) == m_config.hmAccountMap.end()) {
-      SX_ERROR("This account is unknown (%s), it may not be configured for this product: %d\n", orderWrapper.getAccountNumber(), szMsg.u.nowa.nIdentifier);
-      rejectMessageOrder(orderWrapper, "This account is unknown (" + orderWrapper.getAccountNumber() + "), it may not be configured for this product: " + std::to_string(szMsg.u.nowa.nIdentifier));
+    if (orderWrapper.getAccountNumber().length() != (TW_ACCOUNT_LEN - 1)) {
+      SX_ERROR("This account is invalid (%s) %d.\n", orderWrapper.getAccountNumber(), szMsg.u.nowa.nIdentifier);
+      rejectMessageOrder(orderWrapper, "This account is invalid (" + orderWrapper.getAccountNumber() + "), " + std::to_string(szMsg.u.nowa.nIdentifier) + ".\n");
       return false;
     }
 

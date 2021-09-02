@@ -32,7 +32,6 @@ private:
   TW::MQAdapter *m_pMQAdapter;
   ORConfigReader::Config m_config;
   void publishStatusUpdate(const msg_StatusUpdate &message, const string &strRoute);
-  void handleAccountNumberNotFound(int32_t nAccount) const;
 };
 
 #endif //NEWORDERCALLBACKHANDLER_H

@@ -39,11 +39,13 @@ int main(int argc, char *argv[]) {
     "smalls_db_future.out",
     "cfe_db_future.out"
   };
-
-  // load future options
   TW::Future::loadMultipleFutureSymbolMappings(vFutureSymbolMappings);
-  TW::FutureOption::loadCmeSymbolMappingsCSV("cme_db_option.out");
-  TW::FutureOption::loadSmallsSymbolMappingsCSV("smalls_db_option.out");
+
+  std::vector <std::string> vFutureOptionSymbolMappings = {
+    "cme_db_option.out",
+    "smalls_db_option.out"
+  };
+  TW::FutureOption::loadMultipleFutureOptionSymbolMappings(vFutureOptionSymbolMappings);
 
   ORConfigReader::Config config;
   ORConfigReader::read(std::string("Config.xml"), std::string(""), config);

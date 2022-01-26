@@ -3,6 +3,7 @@
 #include <kr/sx_log.h>
 #include <kr/CmdLine.h>
 #include <OR2Lib/ORConfigReader.h>
+#include <twLib/util.h>
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/or/OR2Adapter.h>
 #include <twLib/models/Future.h>
@@ -20,6 +21,7 @@ int main(int argc, char *argv[]) {
   sx_log::Instance().setBit(sx_log::SX_LOG_DEBUG, true);
 #endif
 
+  // Required Environment Variables
   const string strMqHost = getenv("MQ_HOST");
   const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
   const string strMqUsername = getenv("MQ_USERNAME");
@@ -29,6 +31,12 @@ int main(int argc, char *argv[]) {
   const string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
   const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
   const string strMqQueueName = getenv("MQ_QUEUE_NAME");
+  // Optional Environment Variables
+  bool bMqSslEnabled = (TW::getEnv("MQ_SSL_ENABLED", "false") == "true" ? true : false);
+  const string strMqSslCaCertPath = TW::getEnv("MQ_SSL_CA_CERT_PATH", "");
+  const string strMqSslClientCertPath = TW::getEnv("MQ_SSL_CLIENT_CERT_PATH", "");
+  const string strMqSslClientKeyPath = TW::getEnv("MQ_SSL_CLIENT_KEY_PATH", "");
+  bool bMqSslVerifyHostname = (TW::getEnv("MQ_SSL_VERIFY_HOSTNAME", "false") == "true" ? true : false);
 
   CCmdLine cmdLine;
   cmdLine.SplitLine(argc, argv);
@@ -60,7 +68,8 @@ int main(int argc, char *argv[]) {
   string strBindingKey = bDirectExchange ? strMqQueueName : "";
   TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
                             strMqPassword, strMqVHost, strMqQueueName,
-                            strMqExchangeName, "MQAdapter", strBindingKey, bDirectExchange, strMqDirectExchangeName);
+                            strMqExchangeName, "MQAdapter", strBindingKey, bDirectExchange, strMqDirectExchangeName,
+                            bMqSslEnabled, strMqSslCaCertPath, strMqSslClientKeyPath, strMqSslClientCertPath, bMqSslVerifyHostname);
 
   NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
   NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader, bDirectExchange);

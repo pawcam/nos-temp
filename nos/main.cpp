@@ -22,15 +22,15 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Required Environment Variables
-  const string strMqHost = getenv("MQ_HOST");
+  const std::string strMqHost = getenv("MQ_HOST");
   const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
-  const string strMqUsername = getenv("MQ_USERNAME");
-  const string strMqPassword = getenv("MQ_PASSWORD");
-  const string strMqVHost = getenv("MQ_VHOST");
-  const string strMqDirectExchangeName = getenv("MQ_DIRECT_EXCHANGE_NAME");
-  const string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
-  const string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
-  const string strMqQueueName = getenv("MQ_QUEUE_NAME");
+  const std::string strMqUsername = getenv("MQ_USERNAME");
+  const std::string strMqPassword = getenv("MQ_PASSWORD");
+  const std::string strMqVHost = getenv("MQ_VHOST");
+  const std::string strMqDirectExchangeName = getenv("MQ_DIRECT_EXCHANGE_NAME");
+  const std::string strMqExchangeName = getenv("MQ_EXCHANGE_NAME");
+  const std::string strORDefaultRoute = getenv("OR_DEFAULT_ROUTE");
+  const std::string strMqQueueName = getenv("MQ_QUEUE_NAME");
   // Optional Environment Variables
   bool bMqSslEnabled = (TW::getEnv("MQ_SSL_ENABLED", "false") == "true" ? true : false);
   const string strMqSslCaCertPath = TW::getEnv("MQ_SSL_CA_CERT_PATH", "");
@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
   CCmdLine cmdLine;
   cmdLine.SplitLine(argc, argv);
   bool bDirectExchange = cmdLine.HasSwitch("--direct_exchange");
+  const std::string strSenderLocationFile = cmdLine.GetSafeArgument("--senderLocationFile", 0, "SenderLocation.xml");
 
   std::vector <std::string> vFutureSymbolMappings = {
     "cme_db_future.out",
@@ -60,12 +61,12 @@ int main(int argc, char *argv[]) {
 
   TW::SenderLocationReader locationReader;
 
-  locationReader.readFile();
+  locationReader.readFile(strSenderLocationFile);
 
   sx_ThreadSafeLockUnlock lock;
   TW::OR2Adapter or2Adapter(TW::OR2ClientMode::INPUT, strORDefaultRoute, "OR2Adapter", 100, false, &lock);
 
-  string strBindingKey = bDirectExchange ? strMqQueueName : "";
+  const std::string strBindingKey = bDirectExchange ? strMqQueueName : "";
   TW::MQAdapter mqAdapter(strMqHost, nMqPort, strMqUsername,
                             strMqPassword, strMqVHost, strMqQueueName,
                             strMqExchangeName, "MQAdapter", strBindingKey, bDirectExchange, strMqDirectExchangeName,

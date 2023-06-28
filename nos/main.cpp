@@ -13,6 +13,8 @@
 #include "NewOrderCallbackHandler.h"
 #include "NewOrderMessageHandler.h"
 
+#include <kr/static_assertions.h>
+
 int main(int argc, char *argv[]) {
   sx_setArgCArgV(argc, argv);
 
@@ -23,7 +25,7 @@ int main(int argc, char *argv[]) {
 
   // Required Environment Variables
   const std::string strMqHost = getenv("MQ_HOST");
-  const uint16_t nMqPort = lexical_cast<uint16_t>(getenv("MQ_PORT"));
+  const uint16_t nMqPort = static_cast<uint16_t>(strtol(getenv("MQ_PORT"), nullptr/*endptr*/, 10/*base*/));
   const std::string strMqUsername = getenv("MQ_USERNAME");
   const std::string strMqPassword = getenv("MQ_PASSWORD");
   const std::string strMqVHost = getenv("MQ_VHOST");

@@ -4,34 +4,38 @@
 #include <twLib/or/NoopOR2CallbackHandler.h>
 #include <OR2Lib/ORConfigReader.h>
 
+#include <string>
+
 namespace TW {
   class MQAdapter;
 }
 
-class NewOrderCallbackHandler : public TW::NoopOR2CallbackHandler {
+class NewOrderCallbackHandler final : public TW::NoopOR2CallbackHandler {
 
 public:
-  NewOrderCallbackHandler(TW::MQAdapter *pMQAdapter, ORConfigReader::Config& config);
+  NewOrderCallbackHandler(TW::MQAdapter *pMQAdapter, const ORConfigReader::Config& config);
 
-  virtual void statusUpdate(const TOptionID &optID, const string &strRoute,
+  void routeStatus(uint32_t nRouteId, const std::string& strRoute, bool bUp) override;
+
+  void statusUpdate(const TOptionID &optID, const std::string& strRoute,
                             const msg_StatusUpdate &stat) override;
 
-  virtual void statusUpdate(const char *szStock, const string &strRoute, const msg_StatusUpdate &stat) override;
+  void statusUpdate(const char *szStock, const std::string& strRoute, const msg_StatusUpdate &stat) override;
 
-  virtual void statusUpdate(const msg_ComplexOrderWrapper &wrap, const string &strRoute,
+  void statusUpdate(const msg_ComplexOrderWrapper &wrap, const std::string& strRoute,
                             const msg_StatusUpdate &stat) override;
 
-  virtual void statusUpdate(const TFutureID &futID, const string &strRoute,
+  void statusUpdate(const TFutureID &futID, const std::string& strRoute,
                             const msg_StatusUpdate &stat) override;
 
-  virtual void statusUpdate(const TFutureOptionID &futOptID, const string &strRoute,
+  void statusUpdate(const TFutureOptionID &futOptID, const std::string& strRoute,
                             const msg_StatusUpdate &stat) override;
 
 
 private:
   TW::MQAdapter *m_pMQAdapter;
-  ORConfigReader::Config m_config;
-  void publishStatusUpdate(const msg_StatusUpdate &message, const string &strRoute);
+  const ORConfigReader::Config m_config;
+  void publishStatusUpdate(const msg_StatusUpdate &message, const std::string& strRoute);
 };
 
 #endif //NEWORDERCALLBACKHANDLER_H

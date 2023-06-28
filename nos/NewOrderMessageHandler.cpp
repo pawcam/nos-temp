@@ -1,16 +1,15 @@
 #include "NewOrderMessageHandler.h"
 
-#include <string>
-#include <stdexcept>
-
 #include <twLib/JsonOrderInterpreter.h>
 #include <twLib/mq/MQAdapter.h>
 #include <twLib/mq/MQUtil.h>
 #include <twLib/or/OR2Adapter.h>
 #include <twLib/SenderLocationReader.h>
 
+#include <string>
+#include <exception>
 
-NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader *pSenderLocationReader,
+NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, const ORConfigReader::Config &config, TW::SenderLocationReader *pSenderLocationReader,
                                                bool bDefaultRoute)
   : m_pOR2Adapter(pOR2Adapter)
   , m_pMQAdapter(pMQAdapter)

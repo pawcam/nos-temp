@@ -14,10 +14,10 @@ namespace TW {
   class SenderLocationReader;
 }
 
-class NewOrderMessageHandler : public TW::MessageHandler {
+class NewOrderMessageHandler final : public TW::MessageHandler {
 
 public:
-  NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, ORConfigReader::Config &config, TW::SenderLocationReader* pSenderLocationReader,
+  NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, const ORConfigReader::Config &config, TW::SenderLocationReader* pSenderLocationReader,
                          bool bDefaultRoute = false);
 
   virtual bool handleMessage(nlohmann::json &jMessage, std::string strTopic);
@@ -27,7 +27,7 @@ private:
 
   TW::MQAdapter *m_pMQAdapter;
   TW::SenderLocationReader *m_pSenderLocationReader;
-  ORConfigReader::Config m_config;
+  const ORConfigReader::Config m_config;
   MismatchedRootsMap m_rootMap;
   bool m_bDefaultRoute;
 

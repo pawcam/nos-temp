@@ -5,6 +5,7 @@
 #include <twLib/mq/MQUtil.h>
 #include <twLib/or/OR2Adapter.h>
 #include <twLib/SenderLocationReader.h>
+#include <OR2Lib/Account.h>
 
 #include <string>
 #include <exception>
@@ -38,7 +39,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
       return false;
     }
 
-    if (orderWrapper.getAccountNumber().length() != (TW_ACCOUNT_LEN - 1)) {
+    if (orderWrapper.getAccountNumber().length() != (OR2::Account::t_account_size - 1)) {
       SX_ERROR("This account is invalid (%s) %d.\n", orderWrapper.getAccountNumber(), szMsg.u.nowa.nIdentifier);
       rejectMessageOrder(orderWrapper, "This account is invalid (" + orderWrapper.getAccountNumber() + "), " + std::to_string(szMsg.u.nowa.nIdentifier) + ".\n");
       return false;

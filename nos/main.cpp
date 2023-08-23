@@ -15,6 +15,10 @@
 
 #include <kr/static_assertions.h>
 
+#include "OR2Lib/OR2Constants.h"
+#include "kr/SemanticVersion.h"
+#include "kr/serialize.h"
+
 int main(int argc, char *argv[]) {
   sx_setArgCArgV(argc, argv);
 
@@ -22,6 +26,14 @@ int main(int argc, char *argv[]) {
   std::cout << "Enabling debug logging" << std::endl;
   sx_log::Instance().setBit(sx_log::SX_LOG_DEBUG, true);
 #endif
+
+  //TODO add AppVersion
+  SX_WARN("[OR2Version:%s]"
+          "[OR2Hash:%zu]"
+          "\n"
+          , sx::SemanticVersion64BitWrapper{OR2::VERSION}
+          , sxORMsgWithType::HASH
+         );
 
   // Required Environment Variables
   const std::string strMqHost = getenv("MQ_HOST");

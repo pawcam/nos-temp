@@ -20,7 +20,7 @@ public:
   NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::MQAdapter *pMQAdapter, const ORConfigReader::Config &config, TW::SenderLocationReader* pSenderLocationReader,
                          bool bDefaultRoute = false);
 
-  virtual bool handleMessage(nlohmann::json &jMessage, std::string strTopic);
+  bool handleMessage(nlohmann::json &jMessage, std::string strTopic) override;
 
 private:
   TW::OR2Adapter *m_pOR2Adapter;

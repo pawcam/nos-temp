@@ -21,11 +21,14 @@ NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::
   m_rootMap.initFromDBOption("db_option_combined.out", true);
 }
 
-bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string UNUSED(strTopic))
+bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string strTopic)
 {
   uint32_t nOrderNum = numeric_limits<uint32_t>::max();
 
-  SX_DEBUG("Attempting to handle message for order %s\n", jMessage.dump());
+  if(sx_logGetBit(sx_log::SX_LOG_DEBUG))
+  {
+    SX_DEBUG("[%s]Attempting to handle message for order %s\n", strTopic, jMessage.dump());
+  }
 
   TW::JsonOrderInterpreter orderWrapper = TW::JsonOrderInterpreter(jMessage, m_pSenderLocationReader);
   const std::string strDestination = m_bDefaultRoute ? m_pOR2Adapter->getDefaultRoute() : MQUtil::extractDestination(jMessage, m_pOR2Adapter->getDefaultRoute());
@@ -51,7 +54,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
     }
     else if (szMsg.h.uchType == sxORMsgWithType::MSG_COMPLEX_WRAPPER) { // Order is a spread (multi-leg)
       msg_ComplexOrderWrapper &comp = szMsg.u.comp;
-      msg_NewOrderWithAccount *pNowa = (msg_NewOrderWithAccount *)comp.beginMsgStruct();
+      auto pNowa = comp.toMsgStruct<msg_NewOrderWithAccount *>();
       nOrderNum = m_pOR2Adapter->sendOrder(*pNowa, comp.getLeg(0), comp.nLegs, strDestination);
       SX_DEBUG("Sent order (complex): %d \n", pNowa->nIdentifier);
     }

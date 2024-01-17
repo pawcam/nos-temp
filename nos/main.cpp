@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
   // Required Environment Variables
   const std::string strMqHost = getenv("MQ_HOST");
-  const uint16_t nMqPort = static_cast<uint16_t>(strtol(getenv("MQ_PORT"), nullptr/*endptr*/, 10/*base*/));
+  const auto nMqPort = static_cast<uint16_t>(strtol(getenv("MQ_PORT"), nullptr/*endptr*/, 10/*base*/));
   const std::string strMqUsername = getenv("MQ_USERNAME");
   const std::string strMqPassword = getenv("MQ_PASSWORD");
   const std::string strMqVHost = getenv("MQ_VHOST");
@@ -47,9 +47,9 @@ int main(int argc, char *argv[]) {
   const std::string strMqQueueName = getenv("MQ_QUEUE_NAME");
   // Optional Environment Variables
   bool bMqSslEnabled = (TW::getEnv("MQ_SSL_ENABLED", "false") == "true" ? true : false);
-  const string strMqSslCaCertPath = TW::getEnv("MQ_SSL_CA_CERT_PATH", "");
-  const string strMqSslClientCertPath = TW::getEnv("MQ_SSL_CLIENT_CERT_PATH", "");
-  const string strMqSslClientKeyPath = TW::getEnv("MQ_SSL_CLIENT_KEY_PATH", "");
+  const std::string strMqSslCaCertPath = TW::getEnv("MQ_SSL_CA_CERT_PATH", "");
+  const std::string strMqSslClientCertPath = TW::getEnv("MQ_SSL_CLIENT_CERT_PATH", "");
+  const std::string strMqSslClientKeyPath = TW::getEnv("MQ_SSL_CLIENT_KEY_PATH", "");
   bool bMqSslVerifyHostname = (TW::getEnv("MQ_SSL_VERIFY_HOSTNAME", "false") == "true" ? true : false);
 
   CCmdLine cmdLine;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
                             bMqSslEnabled, strMqSslCaCertPath, strMqSslClientKeyPath, strMqSslClientCertPath, bMqSslVerifyHostname);
 
   NewOrderCallbackHandler callbackHandler(&mqAdapter, config);
-  NewOrderMessageHandler messageHandler = NewOrderMessageHandler(&or2Adapter, &mqAdapter, config, &locationReader, bDirectExchange);
+  NewOrderMessageHandler messageHandler(&or2Adapter, &mqAdapter, config, &locationReader, bDirectExchange);
 
   or2Adapter.setService(&callbackHandler);
   mqAdapter.setMessageHandler(&messageHandler);

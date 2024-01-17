@@ -23,7 +23,7 @@ NewOrderMessageHandler::NewOrderMessageHandler(TW::OR2Adapter *pOR2Adapter, TW::
 
 bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string strTopic)
 {
-  uint32_t nOrderNum = numeric_limits<uint32_t>::max();
+  auto nOrderNum = std::numeric_limits<uint32_t>::max();
 
   if(sx_logGetBit(sx_log::SX_LOG_DEBUG))
   {
@@ -68,7 +68,7 @@ bool NewOrderMessageHandler::handleMessage(nlohmann::json &jMessage, std::string
   // 1) the client's sequence has topped out for the day, and the client needs to be restarted
   // 2) the client is not actually connected to anything that it can send orders to
   // In either case, the failure is an infrastructure failure, and not a semantic failure.
-  bool isOrderBogus = (nOrderNum == numeric_limits<uint32_t>::max());
+  bool isOrderBogus = (nOrderNum == std::numeric_limits<uint32_t>::max());
   if (isOrderBogus) {
     SX_ERROR("OR:%s: Order sequence number has reached its limit or client lost connection\n", strDestination);
     rejectMessageOrder(orderWrapper, "OR:" + strDestination + ": Order sequence number has reached its limit or client lost connection");

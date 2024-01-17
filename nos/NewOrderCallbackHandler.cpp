@@ -5,6 +5,8 @@
 #include <twLib/serialize/JsonifyOR2Client.hpp>
 #include <twLib/util.h>
 
+#include "kr/common_enums.h"
+
 NewOrderCallbackHandler::NewOrderCallbackHandler(TW::MQAdapter *pMQAdapter, const ORConfigReader::Config& config)
   : m_pMQAdapter(pMQAdapter)
   , m_config(config) {}
@@ -45,7 +47,7 @@ void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &messag
   const uint32_t &nGlobalOrderNum = message.nGlobalOrderNum;
   const uint64_t &nExchangesOrderNum = message.nExchangesOrderNum;
   const std::string strMessageTime = TW::to_iso8601_string(microsec_clock::universal_time());
-  const sxORMsgWithType::ExchangeStatus eExchangeStatus = (sxORMsgWithType::ExchangeStatus)message.nExchangeStatus;
+  const sx::ExchangeStatus eExchangeStatus = sx::ExchangeStatus(message.nExchangeStatus);
 
   const nlohmann::json j = {
     {"account-number",              strAcct},

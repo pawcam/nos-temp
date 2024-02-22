@@ -42,22 +42,18 @@ void NewOrderCallbackHandler::statusUpdate(const TFutureOptionID &UNUSED(futOptI
 }
 
 void NewOrderCallbackHandler::publishStatusUpdate(const msg_StatusUpdate &message, const std::string &strRoute) {
-  const TW::AcctNumber_t strAcct = message.szAccount;
-  const uint32_t &nIdentifier = message.nIdentifier;
-  const uint32_t &nGlobalOrderNum = message.nGlobalOrderNum;
-  const uint64_t &nExchangesOrderNum = message.nExchangesOrderNum;
-  const std::string strMessageTime = TW::to_iso8601_string(microsec_clock::universal_time());
-  const sx::ExchangeStatus eExchangeStatus = sx::ExchangeStatus(message.nExchangeStatus);
+  auto&& strMessageTime = TW::to_iso8601_string(microsec_clock::universal_time());
+  auto eExchangeStatus  = sx::ExchangeStatus(message.nExchangeStatus);
 
   const nlohmann::json j = {
-    {"account-number",              strAcct},
+    {"account-number",              message.szAccount},
     {"exchange-status",             serialize::tostring(eExchangeStatus)},
-    {"id",                          nIdentifier},
-    {"ext-global-order-number",     nGlobalOrderNum},
+    {"id",                          message.nIdentifier},
+    {"ext-global-order-number",     message.nGlobalOrderNum},
     {"destination-venue",           strRoute},
     {"in-flight-at",                strMessageTime},
-    {"ext-exchange-order-number",   nExchangesOrderNum}
+    {"ext-exchange-order-number",   message.nExchangesOrderNum}
   };
-  const std::string strRoutingKey = MQUtil::getOrderInFlightRoutingKey(strAcct, nIdentifier);
+  auto&& strRoutingKey = MQUtil::getOrderInFlightRoutingKey(message.szAccount, message.nIdentifier);
   m_pMQAdapter->publish(strRoutingKey, j);
 }
